@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Horario Semanal</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            /* Asegura que cualquier desplazamiento en la página sea fluido y suave */
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            padding: 12px;
+            padding-bottom: 60px; /* Espacio extra abajo para que el domingo se lea bien al scrollear */
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .header h1 {
+            font-size: 1.3rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            color: #ffffff;
+        }
+
+        .day-card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            padding: 12px;
+            transition: border-color 0.2s;
+        }
+
+        /* Pequeño toque visual cuando un día está en el foco de atención */
+        .day-card:focus-within {
+            border-color: #444444;
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .day-title {
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #a0a0a0;
+        }
+
+        .btn-add {
+            background: #2d2d2d;
+            color: #ffffff;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-add:active {
+            background: #404040;
+        }
+
+        .slots-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slot-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .slot-input {
+            flex: 1;
+            background: #262626;
+            border: 1px solid #333333;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .slot-input:focus {
+            outline: none;
+            border-color: #555555;
+            background: #2d2d2d;
+        }
+
+        .btn-delete {
+            background: #331c1c;
+            color: #ff6b6b;
+            border: 1px solid #4a2323;
+            width: 38px;
+            height: 38px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-delete:active {
+            background: #4a2323;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>MI HORARIO</h1>
+        </div>
+        <div id="schedule-container"></div>
+    </div>
+
+    <script>
+        const d_semana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        
+        let datosHorario = JSON.parse(localStorage.getItem('rabbit_horario')) || {
+            'Lunes': [], 'Martes': [], 'Miércoles': [], 'Jueves': [], 'Viernes': [], 'Sábado': [], 'Domingo': []
+        };
+
+        function guardarDatos() {
+            localStorage.setItem('rabbit_horario', JSON.stringify(datosHorario));
+        }
+
+        function renderizarHorario() {
+            const container = document.getElementById('schedule-container');
+            container.innerHTML = '';
+
+            d_semana.forEach(dia => {
+                const card = document.createElement('div');
+                card.className = 'day-card';
+
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.innerHTML = `
+                    <span class="day-title">${dia}</span>
+                    <button class="btn-add" onclick="añadirTramo('${dia}')">+</button>
+                `;
+                card.appendChild(dayHeader);
+
+                const slotsList = document.createElement('div');
+                slotsList.className = 'slots-list';
+
+                datosHorario[dia].forEach((textoTramo, index) => {
+                    const row = document.createElement('div');
+                    row.className = 'slot-row';
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'slot-input';
+                    input.value = textoTramo;
+                    input.placeholder = "ej: 08:00 - Desayuno";
+                    
+                    input.oninput = (e) => {
+                        datosHorario[dia][index] = e.target.value;
+                        guardarDatos();
+                    };
+
+                    const btnDel = document.createElement('button');
+                    btnDel.className = 'btn-delete';
+                    btnDel.innerHTML = '✕';
+                    btnDel.onclick = () => borrarTramo(dia, index);
+
+                    row.appendChild(input);
+                    row.appendChild(btnDel);
+                    slotsList.appendChild(row);
+                });
+
+                card.appendChild(slotsList);
+                container.appendChild(card);
+            });
+        }
+
+        function añadirTramo(dia) {
+            datosHorario[dia].push('');
+            guardarDatos();
+            renderizarHorario();
+        }
+
+        function borrarTramo(dia, index) {
+            datosHorario[dia].splice(index, 1);
+            guardarDatos();
+            renderizarHorario();
+        }
+
+        // --- CONTROL DE LA RUEDA DEL RABBIT R1 ---
+        // Este script escucha el giro de la rueda física y desplaza la pantalla suavemente.
+        window.addEventListener('wheel', (event) => {
+            // event.deltaY detecta si giras hacia arriba (negativo) o hacia abajo (positivo)
+            // Multiplicamos para darle una velocidad de scroll cómoda en la pantalla del R1
+            window.scrollBy(0, event.deltaY * 1.2);
+        }, { passive: true });
+
+        // Inicializar la app al cargar
+        renderizarHorario();
+    </script>
+</body>
+</html>
