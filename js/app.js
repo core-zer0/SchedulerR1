@@ -1,56 +1,52 @@
-// js/app.js
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Creamos una consola a pantalla completa en el Rabbit R1
-    const consoleDiv = document.createElement('div');
-    consoleDiv.style.position = 'fixed';
-    consoleDiv.style.top = '0';
-    consoleDiv.style.left = '0';
-    consoleDiv.style.width = '100vw';
-    consoleDiv.style.height = '100vh';
-    consoleDiv.style.background = '#111';
-    consoleDiv.style.color = '#38ff38';
-    consoleDiv.style.fontFamily = 'monospace';
-    consoleDiv.style.padding = '15px';
-    consoleDiv.style.zIndex = '99999';
-    consoleDiv.style.overflowY = 'scroll';
-    consoleDiv.style.fontSize = '11px';
-    consoleDiv.style.lineHeight = '1.4';
-    document.body.appendChild(consoleDiv);
+// Main application logic para la App de Horarios
 
-    let output = "=== R1 HARDWARE SNIFFER ===\n\n";
-
-    // 2. EXTRAEMOS EL CÓDIGO FUENTE DE LA FUNCIÓN DEL SDK
-    if (typeof initializeHardwareListeners === 'function') {
-        output += "✅ initializeHardwareListeners ENCONTRADA.\n";
-        output += "-----------------------------------------\n";
-        output += initializeHardwareListeners.toString(); // Esto descompila la función y muestra su código
-        output += "\n-----------------------------------------\n";
+// Inicializar la aplicación al cargar el DOM
+document.addEventListener('DOMContentLoaded', function() {
+    initializeHardwareListeners();
+    
+    // Verificación de entorno en consola interna
+    if (typeof PluginMessageHandler !== 'undefined') {
+        console.log('Running as R1 Creation');
     } else {
-        output += "❌ ERROR: initializeHardwareListeners NO está definida.\n";
-        // Buscamos si hay otros objetos que inyecte el SDK o el Rabbit OS
-        const keys = Object.keys(window).filter(k => 
-            k.toLowerCase().includes('rabbit') || 
-            k.toLowerCase().includes('hardware') || 
-            k.toLowerCase().includes('storage')
-        );
-        output += `Objetos detectados en window: [${keys.join(', ')}]\n`;
+        console.log('Running in browser mode');
     }
-
-    output += "\n[Historial de Eventos Físicos]:\n";
-    consoleDiv.innerText = output;
-
-    // 3. CAPTURADOR DE EVENTOS OCULTOS
-    // Escuchamos teclas de volumen, eventos de Android y de la comunidad
-    const rareEvents = ['keydown', 'wheel', 'volumechange', 'rabbit-wheel', 'r1-event', 'message'];
-    rareEvents.forEach(evtName => {
-        window.addEventListener(evtName, (e) => {
-            let details = '';
-            if (e.key) details += ` key:${e.key}`;
-            if (e.keyCode) details += ` code:${e.keyCode}`;
-            if (e.detail) details += ` detail:${JSON.stringify(e.detail)}`;
-            if (e.data) details += ` data:${JSON.stringify(e.data)}`;
-            
-            consoleDiv.innerText += `\n-> [${evtName}]${details}`;
-        }, { capture: true, passive: true });
-    });
 });
+
+// Oyentes de los botones de Hardware del Rabbit R1
+function initializeHardwareListeners() {
+    const SCROLL_SPEED = 120; // Píxeles que se moverá la pantalla en cada paso de rueda
+
+    // Evento para girar la rueda hacia arriba
+    window.addEventListener('scrollUp', () => {
+        window.scrollBy({
+            top: -SCROLL_SPEED,
+            behavior: 'smooth' // Hace que el movimiento de los horarios sea fluido
+        });
+    });
+    
+    // Evento para girar la rueda hacia abajo
+    window.addEventListener('scrollDown', () => {
+        window.scrollBy({
+            top: SCROLL_SPEED,
+            behavior: 'smooth'
+        });
+    });
+    
+    // Evento para el botón físico lateral (PTT) por si quieres usarlo en el futuro
+    window.addEventListener('sideClick', () => {
+        console.log('Botón lateral pulsado');
+    });
+    
+    window.addEventListener('longPressStart', () => {
+        console.log('Pulsación larga iniciada');
+    });
+    
+    window.addEventListener('longPressEnd', () => {
+        console.log('Pulsación larga finalizada');
+    });
+}
+
+// Manejador de mensajes del Plugin (Requerido para la estructura del SDK)
+window.onPluginMessage = function(data) {
+    console.log('Received plugin message:', data);
+};
