@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Horario Semanal</title>
     
+    <!-- Enlace al manifest para que el Rabbit R1 lo valide -->
     <link rel="manifest" href="manifest.json">
+
     <style>
         * {
             box-sizing: border-box;
@@ -16,7 +18,6 @@
         }
 
         html {
-            /* Asegura que cualquier desplazamiento en la página sea fluido y suave */
             scroll-behavior: smooth;
         }
 
@@ -24,7 +25,7 @@
             background-color: #121212;
             color: #e0e0e0;
             padding: 12px;
-            padding-bottom: 60px; /* Espacio extra abajo para que el domingo se lea bien al scrollear */
+            padding-bottom: 60px;
         }
 
         .container {
@@ -55,7 +56,6 @@
             transition: border-color 0.2s;
         }
 
-        /* Pequeño toque visual cuando un día está en el foco de atención */
         .day-card:focus-within {
             border-color: #444444;
         }
@@ -101,7 +101,7 @@
 
         .slot-row {
             display: flex;
-            gap: 6px;
+            gap: 4px; /* Reducido un poco para que quepan todos los botones */
             align-items: center;
         }
 
@@ -113,6 +113,8 @@
             padding: 10px;
             border-radius: 6px;
             font-size: 0.95rem;
+            /* Evitamos que el input se haga muy pequeño */
+            min-width: 0; 
         }
 
         .slot-input:focus {
@@ -121,11 +123,37 @@
             background: #2d2d2d;
         }
 
+        /* --- NUEVOS BOTONES DE MOVER --- */
+        .btn-move {
+            background: #262626;
+            color: #a0a0a0;
+            border: 1px solid #333333;
+            width: 32px;
+            height: 38px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-move:active {
+            background: #3a3a3a;
+            color: #ffffff;
+        }
+
+        .btn-move:disabled {
+            opacity: 0.2;
+            cursor: default;
+        }
+
+        /* --- BOTÓN DE BORRAR --- */
         .btn-delete {
             background: #331c1c;
             color: #ff6b6b;
             border: 1px solid #4a2323;
-            width: 38px;
+            width: 34px;
             height: 38px;
             border-radius: 6px;
             font-size: 0.9rem;
@@ -144,7 +172,7 @@
 
     <div class="container">
         <div class="header">
-            <h1>MI HORARIO V06</h1>
+            <h1>MI HORARIO V07</h1>
         </div>
         <div id="schedule-container"></div>
     </div>
@@ -194,12 +222,29 @@
                         guardarDatos();
                     };
 
+                    // --- BOTÓN SUBIR ---
+                    const btnUp = document.createElement('button');
+                    btnUp.className = 'btn-move';
+                    btnUp.innerHTML = '↑';
+                    btnUp.disabled = index === 0; // Desactiva si es el primero
+                    btnUp.onclick = () => moverTramo(dia, index, -1);
+
+                    // --- BOTÓN BAJAR ---
+                    const btnDown = document.createElement('button');
+                    btnDown.className = 'btn-move';
+                    btnDown.innerHTML = '↓';
+                    btnDown.disabled = index === datosHorario[dia].length - 1; // Desactiva si es el último
+                    btnDown.onclick = () => moverTramo(dia, index, 1);
+
+                    // --- BOTÓN BORRAR ---
                     const btnDel = document.createElement('button');
                     btnDel.className = 'btn-delete';
                     btnDel.innerHTML = '✕';
                     btnDel.onclick = () => borrarTramo(dia, index);
 
                     row.appendChild(input);
+                    row.appendChild(btnUp);
+                    row.appendChild(btnDown);
                     row.appendChild(btnDel);
                     slotsList.appendChild(row);
                 });
@@ -221,18 +266,29 @@
             renderizarHorario();
         }
 
-        // --- CONTROL DE LA RUEDA DEL RABBIT R1 ---
-        // Este script escucha el giro de la rueda física y desplaza la pantalla suavemente.
-        window.addEventListener('wheel', (event) => {
-            // event.deltaY detecta si giras hacia arriba (negativo) o hacia abajo (positivo)
-            // Multiplicamos para darle una velocidad de scroll cómoda en la pantalla del R1
-            window.scrollBy(0, event.deltaY * 1.2);
-        }, { passive: true });
+        // --- NUEVA FUNCIÓN PARA MOVER TRAMOS ---
+        function moverTramo(dia, index, direccion) {
+            // direccion: -1 (subir) o 1 (bajar)
+            const nuevoIndex = index + direccion;
+            
+            // Verificamos que no se salga de los límites del array
+            if (nuevoIndex >= 0 && nuevoIndex < datosHorario[dia].length) {
+                // Intercambiamos los elementos
+                const temp = datosHorario[dia][index];
+                datosHorario[dia][index] = datosHorario[dia][nuevoIndex];
+                datosHorario[dia][nuevoIndex] = temp;
+                
+                guardarDatos();
+                renderizarHorario();
+            }
+        }
 
         // Inicializar la app al cargar
         renderizarHorario();
     </script>
-<script src="js/hardware.js"></script>
-<script src="js/app.js"></script>
+    
+    <!-- Scripts de control del dispositivo (Mantener intactos) -->
+    <script src="js/hardware.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
